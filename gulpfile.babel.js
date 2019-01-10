@@ -89,7 +89,6 @@ gulp.task('copy:.htaccess', () =>
 
 gulp.task('copy:index.html', () => {
   gulp.src(`${dirs.src}/index.html`)
-    .pipe(plugins().replace(/{{MODERNIZR_VERSION}}/g, pkg.devDependencies.modernizr))
     .pipe(gulp.dest(dirs.dist));
 });
 
@@ -100,10 +99,10 @@ gulp.task('copy:license', () =>
 
 gulp.task('copy:main.css', () => {
   gulp.src(`${dirs.src}/css/main.css`)
-    // .pipe(plugins().autoprefixer({
-    //   browsers: ['last 2 versions', 'ie >= 9', '> 1%'],
-    //   cascade: false
-    // }))
+    .pipe(plugins().autoprefixer({
+      browsers: ['last 2 versions', 'ie >= 9', '> 1%'],
+      cascade: false
+    }))
     .pipe(gulp.dest(`${dirs.dist}/css`));
 });
 
@@ -131,13 +130,6 @@ gulp.task('copy:normalize', () =>
     .pipe(gulp.dest(`${dirs.dist}/css`))
 );
 
-gulp.task('modernizr', (done) => {
-  modernizr.build(modernizrConfig, (code) => {
-    fs.writeFile(`${dirs.dist}/js/vendor/modernizr-${pkg.devDependencies.modernizr}.min.js`, code, done);
-  });
-
-});
-
 gulp.task('lint:js', () =>
   gulp.src([
     'gulpfile.js',
@@ -164,7 +156,7 @@ gulp.task('archive', (done) => {
 gulp.task('build', (done) => {
   runSequence(
     ['clean', 'lint:js'],
-    'copy', 'modernizr',
+    'copy',
     done);
 });
 
