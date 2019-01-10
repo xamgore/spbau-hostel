@@ -2,11 +2,9 @@ import fs from 'fs';
 import path from 'path';
 
 import gulp from 'gulp';
-
 // Load all gulp plugins automatically
 // and attach them to the `plugins` object
 import plugins from 'gulp-load-plugins';
-
 // Temporary solution until gulp 4
 // https://github.com/gulpjs/gulp/issues/355
 import runSequence from 'run-sequence';
@@ -14,11 +12,9 @@ import runSequence from 'run-sequence';
 import archiver from 'archiver';
 import glob from 'glob';
 import del from 'del';
-import ssri from 'ssri';
 import modernizr from 'modernizr';
-
-import pkg from './package.json';
 import modernizrConfig from './modernizr-config.json';
+import pkg from './package';
 
 
 const dirs = pkg['h5bp-configs'].directories;
@@ -32,7 +28,6 @@ gulp.task('archive:create_archive_dir', () => {
 });
 
 gulp.task('archive:zip', (done) => {
-
   const archiveName = path.resolve(dirs.archive, `${pkg.name}_v${pkg.version}.zip`);
   const zip = archiver('zip');
   const files = glob.sync('**/*.*', {
@@ -49,7 +44,6 @@ gulp.task('archive:zip', (done) => {
   output.on('close', done);
 
   files.forEach((file) => {
-
     const filePath = path.resolve(dirs.dist, file);
 
     // `zip.bulk` does not maintain the file
@@ -58,12 +52,10 @@ gulp.task('archive:zip', (done) => {
       'name': file,
       'mode': fs.statSync(filePath).mode
     });
-
   });
 
   zip.pipe(output);
   zip.finalize();
-
 });
 
 gulp.task('clean', (done) => {
@@ -75,10 +67,14 @@ gulp.task('clean', (done) => {
   });
 });
 
+gulp.task('fastbuild', [
+  'copy:index.html',
+  'copy:main.css',
+]);
+
 gulp.task('copy', [
   'copy:.htaccess',
   'copy:index.html',
-  'copy:jquery',
   'copy:license',
   'copy:main.css',
   'copy:misc',
@@ -92,25 +88,10 @@ gulp.task('copy:.htaccess', () =>
 );
 
 gulp.task('copy:index.html', () => {
-  const hash = ssri.fromData(
-    fs.readFileSync('node_modules/jquery/dist/jquery.min.js'),
-    {algorithms: ['sha256']}
-  );
-  let version = pkg.devDependencies.jquery;
-  let modernizrVersion = pkg.devDependencies.modernizr;
-
   gulp.src(`${dirs.src}/index.html`)
-    .pipe(plugins().replace(/{{JQUERY_VERSION}}/g, version))
-    .pipe(plugins().replace(/{{MODERNIZR_VERSION}}/g, modernizrVersion))
-    .pipe(plugins().replace(/{{JQUERY_SRI_HASH}}/g, hash.toString()))
+    .pipe(plugins().replace(/{{MODERNIZR_VERSION}}/g, pkg.devDependencies.modernizr))
     .pipe(gulp.dest(dirs.dist));
 });
-
-gulp.task('copy:jquery', () =>
-  gulp.src(['node_modules/jquery/dist/jquery.min.js'])
-    .pipe(plugins().rename(`jquery-${pkg.devDependencies.jquery}.min.js`))
-    .pipe(gulp.dest(`${dirs.dist}/js/vendor`))
-);
 
 gulp.task('copy:license', () =>
   gulp.src('LICENSE.txt')
@@ -118,15 +99,11 @@ gulp.task('copy:license', () =>
 );
 
 gulp.task('copy:main.css', () => {
-
-  const banner = `/*! HTML5 Boilerplate v${pkg.version} | ${pkg.license} License | ${pkg.homepage} */\n\n`;
-
   gulp.src(`${dirs.src}/css/main.css`)
-    .pipe(plugins().header(banner))
-    .pipe(plugins().autoprefixer({
-      browsers: ['last 2 versions', 'ie >= 9', '> 1%'],
-      cascade: false
-    }))
+    // .pipe(plugins().autoprefixer({
+    //   browsers: ['last 2 versions', 'ie >= 9', '> 1%'],
+    //   cascade: false
+    // }))
     .pipe(gulp.dest(`${dirs.dist}/css`));
 });
 
@@ -154,8 +131,7 @@ gulp.task('copy:normalize', () =>
     .pipe(gulp.dest(`${dirs.dist}/css`))
 );
 
-gulp.task('modernizr', (done) =>{
-
+gulp.task('modernizr', (done) => {
   modernizr.build(modernizrConfig, (code) => {
     fs.writeFile(`${dirs.dist}/js/vendor/modernizr-${pkg.devDependencies.modernizr}.min.js`, code, done);
   });

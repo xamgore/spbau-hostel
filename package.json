@@ -50,6 +50,7 @@
   "name": "html5-boilerplate",
   "scripts": {
     "build": "gulp build",
+    "copy": "gulp fastbuild",
     "test": "gulp archive && mocha --require babel-core/register --reporter spec --timeout 5000"
   },
   "version": "6.1.0",
